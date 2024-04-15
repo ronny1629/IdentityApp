@@ -28,11 +28,11 @@ namespace IdentityApp.Services
                 new Claim(ClaimTypes.NameIdentifier, user.Id),
                 new Claim(ClaimTypes.Email, user.Email),
                 new Claim(ClaimTypes.GivenName, user.FirstName),
-                new Claim(ClaimTypes.Surname, user.LastName),
-                new Claim("my own claim name", "this is the value")
+                new Claim(ClaimTypes.Surname, user.LastName)
+                
             };
 
-            var credentials = new SigningCredentials(_jwtKey, SecurityAlgorithms.HmacSha512Signature);
+            var credentials = new SigningCredentials(_jwtKey, SecurityAlgorithms.HmacSha256Signature);
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(userClaims),

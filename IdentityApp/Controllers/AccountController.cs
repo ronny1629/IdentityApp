@@ -1,9 +1,12 @@
 ﻿using IdentityApp.DTOs.Account;
 using IdentityApp.Models;
 using IdentityApp.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
 using System.Threading.Tasks;
 
 namespace IdentityApp.Controllers
@@ -22,6 +25,14 @@ namespace IdentityApp.Controllers
             _signInManager = signInManager;
             _userManager = userManager;
         }
+        [Authorize]
+        [HttpGet("refresh-user-token")]
+        public async Task<ActionResult<UserDto>> RefreshUserToken()
+        {
+            var user = await _userManager.FindByNameAsync(User.FindFirst(ClaimTypes.Email)?.Value);
+            return CreateApplicationUserDto(user);
+        }
+
 
         [HttpPost("login")]
         public async Task<ActionResult<UserDto>> Login(LoginDto model)
@@ -47,6 +58,34 @@ namespace IdentityApp.Controllers
             return CreateApplicationUserDto(user);
         }
 
+        [HttpPost("register")]
+        public async Task<ActionResult> Register(RegisterDto model)
+        {
+            if (await CheckEmailExistAsync(model.Email))
+            {
+                return BadRequest($"An existing account is using {model.Email}, email address, please try with another email address");
+            }
+
+            var userToAdd = new User
+            {
+                FirstName = model.FirstName.ToLower(),
+                LastName = model.LastName.ToLower(),
+                UserName = model.Email.ToLower(),
+                Email = model.Email.ToLower(),
+                EmailConfirmed = true
+
+            };
+
+            var result = await _userManager.CreateAsync(userToAdd, model.Password);
+
+            if (!result.Succeeded)
+            {
+                return BadRequest(result.Errors);
+            }
+
+            return Ok("Your account has been created, you can login");
+        }
+
 
  #region private Helper Methods
         private UserDto CreateApplicationUserDto(User user)
@@ -59,7 +98,13 @@ namespace IdentityApp.Controllers
 
             };
         }
+
+        private async Task<bool> CheckEmailExistAsync(string email)
+        {
+            return await _userManager.Users.AnyAsync(x => x.Email == email.ToLower());
+        }
  #endregion
 
     }
+
 }
