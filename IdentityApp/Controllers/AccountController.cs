@@ -25,6 +25,8 @@ namespace IdentityApp.Controllers
             _signInManager = signInManager;
             _userManager = userManager;
         }
+
+
         [Authorize]
         [HttpGet("refresh-user-token")]
         public async Task<ActionResult<UserDto>> RefreshUserToken()
@@ -58,12 +60,19 @@ namespace IdentityApp.Controllers
             return CreateApplicationUserDto(user);
         }
 
+
+        private async Task<bool> CheckEmailExistAsync(string email)
+        {
+            return await _userManager.Users.AnyAsync(x => x.Email == email.ToLower());
+        }
+
+
         [HttpPost("register")]
         public async Task<ActionResult> Register(RegisterDto model)
         {
             if (await CheckEmailExistAsync(model.Email))
             {
-                return BadRequest($"An existing account is using {model.Email}, email address, please try with another email address");
+                return BadRequest($"An existing account is using { model.Email }, email address, please try with another email address");
             }
 
             var userToAdd = new User
@@ -95,14 +104,10 @@ namespace IdentityApp.Controllers
                 FirstName = user.FirstName,
                 LastName = user.UserName,
                 JWT = _jwtService.CreateJWT(user),
-
             };
         }
 
-        private async Task<bool> CheckEmailExistAsync(string email)
-        {
-            return await _userManager.Users.AnyAsync(x => x.Email == email.ToLower());
-        }
+     
  #endregion
 
     }
